@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sort"
 
@@ -11,21 +11,38 @@ import (
 )
 
 func GetLatestVersion(c *gin.Context) {
-	artifact := c.Param("artifact")
-	artifactPath := filepath.Join(config.ArtifactDir, artifact)
-
-	dirs, err := ioutil.ReadDir(artifactPath)
-	if err != nil || len(dirs) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "No versions found"})
+	artifactDirs, err := os.ReadDir(config.ArtifactDir)
+	if err != nil || len(artifactDirs) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No artifacts found"})
 		return
 	}
 
-	sort.Slice(dirs, func(i, j int) bool {
-		return dirs[i].ModTime().After(dirs[j].ModTime())
+	sort.Slice(artifactDirs, func(i, j int) bool {
+		infoI, _ := artifactDirs[i].Info()
+		infoJ, _ := artifactDirs[j].Info()
+		return infoI.ModTime().After(infoJ.ModTime())
 	})
 
-	latestVersion := dirs[0].Name()
-	downloadURL := "/download/" + artifact + "/" + latestVersion
+	latestArtifact := artifactDirs[0].Name()
+	latestArtifactPath := filepath.Join(config.ArtifactDir, latestArtifact)
+	versionDirs, err := os.ReadDir(latestArtifactPath)
+	if err != nil || len(versionDirs) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No versions found for latest artifact"})
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{"latest_version": latestVersion, "download_url": downloadURL})
+	sort.Slice(versionDirs, func(i, j int) bool {
+		infoI, _ := versionDirs[i].Info()
+		infoJ, _ := versionDirs[j].Info()
+		return infoI.ModTime().After(infoJ.ModTime())
+	})
+
+	latestVersion := versionDirs[0].Name()
+	downloadURL := "/download/" + latestArtifact + "/" + latestVersion
+
+	c.JSON(http.StatusOK, gin.H{
+		"latest_artifact": latestArtifact,
+		"latest_version":  latestVersion,
+		"download_url":    downloadURL,
+	})
 }
