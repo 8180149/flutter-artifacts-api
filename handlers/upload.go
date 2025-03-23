@@ -8,12 +8,11 @@ import (
 	"path/filepath"
 
 	"github.com/8180149/flutter-artifacts-api/config"
-
 	"github.com/gin-gonic/gin"
 )
 
 func UploadArtifact(c *gin.Context) {
-	artifact := c.PostForm("artifact")
+	osSystem := c.PostForm("os")
 	version := c.PostForm("version")
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -21,13 +20,13 @@ func UploadArtifact(c *gin.Context) {
 		return
 	}
 
-	dirPath := filepath.Join(config.ArtifactDir, artifact, version)
+	dirPath := filepath.Join(config.ArtifactDir, osSystem, version)
 	if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create directories"})
 		return
 	}
 
-	filePath := filepath.Join(dirPath, file.Filename)
+	filePath := filepath.Join(dirPath, version+filepath.Ext(file.Filename))
 	if err := saveUploadedFile(file, filePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
 		return
