@@ -1,12 +1,14 @@
 version: '3.8'
 
 services:
-  api:
+  flutter-artifacts-api:
+    image: ghcr.io/8180149/flutter-artifacts-api:latest
+    restart: always
     build: .
     ports:
       - "8080:8080"
     environment:
-      - API_KEY=mysecureapikey
+      - API_KEY=your-secret-key
       - PORT=8080
     volumes:
       - ./artifacts:/app/artifacts
