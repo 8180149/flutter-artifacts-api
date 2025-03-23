@@ -1,4 +1,3 @@
-// main.go
 package main
 
 import (
@@ -14,7 +13,7 @@ func main() {
 	r.Use(middleware.AuthMiddleware())
 
 	r.POST("/upload", handlers.UploadArtifact)
-	r.GET("/latest/:artifact", handlers.GetLatestVersion)
+	r.GET("/latest", handlers.GetLatestVersion) // Updated to remove artifact param
 	r.GET("/download/:artifact/:version", handlers.DownloadArtifact)
 
 	r.Run(":" + config.Port)
