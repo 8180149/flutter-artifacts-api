@@ -12,7 +12,7 @@ import (
 )
 
 func UploadArtifact(c *gin.Context) {
-	osSystem := c.PostForm("os")
+	osSystem := c.PostForm("os") // Receiving OS instead of artifact
 	version := c.PostForm("version")
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -20,13 +20,17 @@ func UploadArtifact(c *gin.Context) {
 		return
 	}
 
-	dirPath := filepath.Join(config.ArtifactDir, osSystem, version)
+	// Define the path as artifacts/{os}/{version}.zip
+	filePath := filepath.Join(config.ArtifactDir, osSystem, version+".zip")
+
+	// Ensure the parent directory exists
+	dirPath := filepath.Join(config.ArtifactDir, osSystem)
 	if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create directories"})
 		return
 	}
 
-	filePath := filepath.Join(dirPath, version+filepath.Ext(file.Filename))
+	// Save the uploaded file
 	if err := saveUploadedFile(file, filePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
 		return
@@ -35,6 +39,7 @@ func UploadArtifact(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "File uploaded successfully", "path": filePath})
 }
 
+// Helper function to save uploaded file
 func saveUploadedFile(file *multipart.FileHeader, dst string) error {
 	src, err := file.Open()
 	if err != nil {
